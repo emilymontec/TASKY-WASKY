@@ -1,0 +1,125 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* TABLERO */
+.world {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(
+    circle at top,
+    #3a2d8f 0%,
+    #2b145f 40%,
+    #140b2e 100%
+  );
+}
+
+/* TAREA */
+.bubble {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: rgba(120, 180, 255, 0.85);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  cursor: pointer;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.35),
+    inset 0 -8px 16px rgba(255, 255, 255, 0.15);
+  animation-name: float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  user-select: none;
+}
+.bubble:active {
+  transform: scale(1.05);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.45);
+}
+
+/* Estado completado */
+.bubble.done {
+  background: rgba(255, 120, 120, 0.85);
+}
+
+/* Emoji */
+.bubble .emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+/* Texto */
+.bubble span {
+  font-size: 12px;
+  padding: 0 8px;
+  line-height: 1.2;
+}
+
+/* ANIMACIÓN FLOTANTE */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+/* TOP BAR (HUD) */
+.top-bar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  z-index: 1000;
+}
+
+.stat {
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+}
+
+/* FLOATING ACTION BUTTON */
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #ff5fd8, #8a4bff);
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+  z-index: 1000;
+}
+
+.fab:hover {
+  transform: scale(1.08);
+}
