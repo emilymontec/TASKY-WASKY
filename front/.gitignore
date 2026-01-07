@@ -9,11 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
-dist/
 dist-ssr
 *.local
-build/
-.cache/
 
 # Editor directories and files
 .vscode/*
@@ -25,11 +22,3 @@ build/
 *.njsproj
 *.sln
 *.sw?
-Thumbs.db
-.vite/
-
-
-.env
-.env.local
-.env.development
-.env.production

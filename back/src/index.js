@@ -1,20 +1,19 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import tasksRoutes from "./routes/tasks.js";
-import { supabase } from "./config/db.js";
+import tasksRoutes from './routes/tasks.routes.js'
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Tasky backend running...");
+app.get("/", (_, res) => {
+  res.json("Tasky backend running...");
 });
 
-app.use("/tasks", tasksRoutes(supabase));
+app.use('/tasks', tasksRoutes)
 
-app.listen(3001, () => {
-  console.log(`Server → http://localhost:3001`);
+app.listen(4000, () => {
+  console.log("Server → http://localhost:4000");
 });
