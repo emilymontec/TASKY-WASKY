@@ -1,18 +1,18 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #f2f5f9;
+  background: #ecf2f9;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 60vh;
 }
 
-.app {
+.app { /* TABLERO */
   background: white;
   padding: 24px;
   border-radius: 16px;
-  width: 380px;
+  width: 1400px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.08);
 }
 
@@ -20,7 +20,7 @@ h1 {
   margin: 0 0 16px;
 }
 
-.task-form {
+.task-form { /* FORMULARIO */
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
@@ -60,28 +60,55 @@ h1 {
   border-radius: 12px;
   background: #f9fafb;
   border-left: 4px solid #ffcb1e; /* Pending */
+  margin-bottom: 12px;
 }
 
 .task-card.completed {
-  border-left: 4px solid #2ecc71; /* Completed */
+  animation: none;
+  border-left: 4px solid #2ecc71;
   opacity: 0.6;
   text-decoration: line-through;
 }
 
-.task-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .task-meta {
   font-size: 12px;
-  color: #777;
+  color: #666;
 }
 
-.task-card button {
-  border: none;
-  background: none;
+.task-actions button {
+  margin-left: 6px;
   cursor: pointer;
-  font-size: 16px;
+}
+
+.task-card.calm {
+  animation: floatCalm 5s ease-in-out infinite;
+}
+
+.task-card.energetic {
+  animation: floatEnergetic 2.5s ease-in-out infinite;
+}
+
+.task-card.lazy {
+  animation: floatLazy 8s ease-in-out infinite;
+}
+
+.floating-board {
+  margin-top: 20px;
+}
+
+@keyframes floatCalm {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes floatEnergetic {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes floatLazy {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
 }
