@@ -12,38 +12,44 @@ export default function TaskBoard() {
 
   const loadTasks = async () => {
     const data = await getTasks()
-    setTasks(data)
+    setTasks(data || [])
   }
 
-  const handleCreate = async ({ title, description }) => {
+  const handleCreate = async ({ title, description, personality }) => {
     const newTask = await createTask({
       title,
       description,
+      personality,
       status: 'Pending'
     })
-    setTasks([...tasks, newTask])
+    setTasks(prev => [...prev, newTask])
   }
 
   const handleDelete = async (id) => {
     await deleteTask(id)
-    setTasks(tasks.filter(t => t.id !== id))
+    setTasks(prev => prev.filter(t => t.id !== id))
   }
 
   const handleToggleStatus = async (task) => {
-  const updatedTask = await updateTask(task.id, {
-    status: task.status === 'Pending' ? 'Completed' : 'Pending'
-  })
+    const newStatus =
+      task.status?.toLowerCase() === 'pending'
+        ? 'Completed'
+        : 'Pending'
 
-  setTasks(tasks.map(t =>
-    t.id === task.id ? updatedTask : t
-  ))
-}
+    const updated = await updateTask(task.id, {
+      status: newStatus
+    })
+
+    setTasks(prev =>
+      prev.map(t => (t.id === task.id ? updated : t))
+    )
+  }
 
   return (
     <div>
       <TaskForm onCreate={handleCreate} />
 
-      <div className="task-list">
+      <div className="floating-board">
         {tasks.map(task => (
           <TaskCard
             key={task.id}
