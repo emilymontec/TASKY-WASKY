@@ -6,20 +6,21 @@ import TaskForm from './TaskForm'
 export default function TaskBoard() {
   const [tasks, setTasks] = useState([])
 
-  useEffect(() => {
-    loadTasks()
-  }, [])
-
   const loadTasks = async () => {
     const data = await getTasks()
     setTasks(data || [])
   }
 
-  const handleCreate = async ({ title, description, personality }) => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTasks()
+  }, [])
+
+  const handleCreate = async ({ title, description, due_date }) => {
     const newTask = await createTask({
       title,
       description,
-      personality,
+      due_date,
       status: 'Pending'
     })
     setTasks(prev => [...prev, newTask])
