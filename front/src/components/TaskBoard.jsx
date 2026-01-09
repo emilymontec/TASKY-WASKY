@@ -48,6 +48,11 @@ export default function TaskBoard() {
 
   return (
     <div>
+      <div className="stats">
+        <div className="stat-item">🎯 Misiones Activas: {tasks.filter(t => t.status !== 'Completed').length}</div>
+        <div className="stat-item">✅ Completadas: {tasks.filter(t => t.status === 'Completed').length}</div>
+        <div className="stat-item">🏆 Progreso: {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0}%</div>
+      </div>
       <TaskForm onCreate={handleCreate} />
 
       <div className="floating-board">
