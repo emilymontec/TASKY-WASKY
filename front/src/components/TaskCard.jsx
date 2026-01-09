@@ -31,6 +31,12 @@ export default function TaskCard({ task, onDelete, onToggle }) {
   if (isOverdue) personality = 'lazy'
   else if (isDueSoon) personality = 'energetic'
 
+  const personalityIcons = {
+    calm: '🤗',
+    energetic: '😨',
+    lazy: '😴'
+  }
+
   return (
     <div
       className={`task-card
@@ -64,7 +70,7 @@ export default function TaskCard({ task, onDelete, onToggle }) {
         </div>
       </div>
 
-      <div className="task-status">{personality}</div>
+      <div className="task-status">{isCompleted ? '🤩' : personalityIcons[personality]}</div>
 
       <div className="task-actions">
         <button onClick={() => onToggle(task)}>
