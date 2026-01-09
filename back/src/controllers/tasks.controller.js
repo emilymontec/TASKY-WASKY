@@ -10,13 +10,14 @@ export const getTasks = async (_, res) => {
 }
 
 export const createTask = async (req, res) => {
-  const { title, description, personality, pos_x, pos_y } = req.body
+  const { title, description, due_date } = req.body
 
   const { data, error } = await supabase
     .from('tasks')
     .insert([{
       title,
-      description
+      description,
+      due_date
     }])
     .select()
 

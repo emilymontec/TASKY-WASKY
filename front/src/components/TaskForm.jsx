@@ -3,15 +3,16 @@ import { useState } from 'react'
 export default function TaskForm({ onCreate }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [personality, setPersonality] = useState('calm')
+  const [dueDate, setDueDate] = useState('')
 
   const submit = (e) => {
     e.preventDefault()
     if (!title.trim()) return
 
-    onCreate({ title, description, personality })
+    onCreate({ title, description, due_date: dueDate || null })
     setTitle('')
     setDescription('')
+    setDueDate('')
   }
 
   return (
@@ -28,17 +29,14 @@ export default function TaskForm({ onCreate }) {
         onChange={e => setDescription(e.target.value)}
       />
       
+      <input
+      type="date"
+      value={dueDate}
+      onChange={e => setDueDate(e.target.value)}
+      />
+
       <button>+</button>
-
-      <select
-      value={personality}
-      onChange={e => setPersonality(e.target.value)}
-      >
-        <option value="calm">😌 Calm</option>
-        <option value="energetic">⚡ Energetic</option>
-        <option value="lazy">😴 Lazy</option>
-        </select>
-
+      
     </form>
   )
 }

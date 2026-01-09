@@ -54,13 +54,42 @@ h1 {
 
 .task-card {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 12px;
   border-radius: 12px;
   background: #f9fafb;
   border-left: 4px solid #ffcb1e; /* Pending */
   margin-bottom: 12px;
+  will-change: transform;
+}
+
+.task-card.calm {
+  animation: floatCalm 3s ease-in-out infinite;
+}
+
+.task-card.energetic {
+  animation: floatEnergetic 2s ease-in-out infinite;
+}
+
+.task-card.lazy {
+  animation: floatLazy 4s ease-in-out infinite;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-status {
+  margin-left: auto;
+  margin-right: 10px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .task-card.completed {
@@ -80,35 +109,34 @@ h1 {
   cursor: pointer;
 }
 
-.task-card.calm {
-  animation: floatCalm 5s ease-in-out infinite;
-}
-
-.task-card.energetic {
-  animation: floatEnergetic 2.5s ease-in-out infinite;
-}
-
-.task-card.lazy {
-  animation: floatLazy 8s ease-in-out infinite;
-}
-
 .floating-board {
   margin-top: 20px;
 }
 
-@keyframes floatCalm {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-  100% { transform: translateY(0); }
+.task-card.overdue {
+  border-left-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.1);
 }
 
-@keyframes floatEnergetic {
+.task-card.due-soon {
+  border-left-color: #f39c12;
+  background-color: rgba(243, 156, 18, 0.1);
+}
+
+@keyframes floatCalm {
   0% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0); }
 }
 
+@keyframes floatEnergetic {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0); }
+}
+
 @keyframes floatLazy {
   0% { transform: translateY(0); }
-  100% { transform: translateY(-2px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
 }
