@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react' // importar hooks
 import { getTasks, createTask, deleteTask, updateTask } from '../services/tasksApi' // importar servicios (funciones)
 import TaskCard from './TaskCard' // importar TaskCard (tarea individual)
 import TaskForm from './TaskForm' // importar TaskForm (formulario)
+import EditTaskModal from './EditTaskModal' // importar modal de edición
 
 export default function TaskBoard() { // tablero de tareas
   const [tasks, setTasks] = useState([]) // estado inicial de tareas
+  const [editingTask, setEditingTask] = useState(null) // tarea en edición
 
   const loadTasks = async () => { // cargar tareas
     const data = await getTasks() // obtener tareas desde el servicio
@@ -46,6 +48,18 @@ export default function TaskBoard() { // tablero de tareas
       prev.map(t => (t.id === task.id ? updated : t))
     )
   }
+// editar tarea
+  const handleEdit = (task) => {
+    setEditingTask(task)
+  }
+// actualizar tarea
+  const handleUpdate = async (id, data) => {
+    const updated = await updateTask(id, data)
+    setTasks(prev =>
+      prev.map(t => (t.id === id ? updated : t))
+    )
+    setEditingTask(null)
+  }
 
   return ( // diseño de tablero
     <div>
@@ -63,9 +77,18 @@ export default function TaskBoard() { // tablero de tareas
             task={task}
             onDelete={handleDelete}
             onToggle={handleToggleStatus}
+            onEdit={handleEdit}
           />
         ))}
       </div>
+
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          onUpdate={handleUpdate}
+          onClose={() => setEditingTask(null)}
+        />
+      )}
     </div>
   )
 }

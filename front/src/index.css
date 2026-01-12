@@ -11,9 +11,10 @@ body {
 
 .app { /* TABLERO */
   background: rgba(255, 255, 255, 0.95);
-  padding: 30px;
+  padding: 10px;
   border-radius: 20px;
   width: 1500px;
+  height: 700px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.15);
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -191,4 +192,99 @@ h1 {
   0% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
   100% { transform: translateY(0); }
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-radius: 20px;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 100%);
+  padding: 30px;
+  border-radius: 20px;
+  width: 450px;
+  max-width: 90%;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-content h2 {
+  margin: 0 0 20px;
+  text-align: center;
+  color: #4a5568;
+  font-size: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.modal-actions button { /* Boton actualizar */
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  font-size: 15px;
+  font-style: bold;
+  width: auto;
+}
+
+.modal-actions button:hover {
+  transform: scale(1.05);
+}
+
+.modal-actions button[type="button"] { /* Boton cancelar */
+  background: #ccc;
+  color: #333;
+}
+
+.modal-content .task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-content .task-form input,
+.modal-content .task-form textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.modal-content .task-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #4a5568;
+  font-size: 14px;
 }
