@@ -1,4 +1,4 @@
-export default function TaskCard({ task, onDelete, onToggle }) { // funciones de la tarjeta
+export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // funciones de la tarjeta
   
   const formattedDate = task.created_at // fecha de creacion
     ? new Date(task.created_at).toLocaleDateString()
@@ -74,6 +74,7 @@ export default function TaskCard({ task, onDelete, onToggle }) { // funciones de
       <div className="task-status">{isCompleted ? '🤩' : personalityIcons[personality]}</div>
 
       <div className="task-actions">
+        <button onClick={() => onEdit(task)}>✏️</button>
         <button onClick={() => onToggle(task)}>
           {isCompleted ? '↩️' : '✅'}
         </button>
