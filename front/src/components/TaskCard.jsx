@@ -1,17 +1,17 @@
-export default function TaskCard({ task, onDelete, onToggle }) {
-  const formattedDate = task.created_at
+export default function TaskCard({ task, onDelete, onToggle }) { // funciones de la tarjeta
+  
+  const formattedDate = task.created_at // fecha de creacion
     ? new Date(task.created_at).toLocaleDateString()
     : '—'
 
-  const isCompleted = task.status?.toLowerCase() === 'completed'
+  const isCompleted = task.status?.toLowerCase() === 'completed' // estado de tarea
 
-  // --- FECHAS NORMALIZADAS ---
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  let daysLeft = null
+  let daysLeft = null // fecha de vencimiento
 
-  if (task.due_date) {
+  if (task.due_date) { // calcula cuántos dias faltan desde hoy hasta esa fecha
     const dueDate = new Date(task.due_date + 'T00:00:00')
     dueDate.setHours(0, 0, 0, 0)
 
@@ -20,13 +20,14 @@ export default function TaskCard({ task, onDelete, onToggle }) {
     )
   }
 
-  const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0
-  const isDueSoon =
+  const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0 // tarea vencida
+
+  const isDueSoon = // tarea por vencer pronto
     !isCompleted &&
     daysLeft !== null &&
     daysLeft >= 0 &&
     daysLeft <= 2
-
+// personalidad de tareas
   let personality = 'calm'
   if (isOverdue) personality = 'lazy'
   else if (isDueSoon) personality = 'energetic'
@@ -37,7 +38,7 @@ export default function TaskCard({ task, onDelete, onToggle }) {
     lazy: '😴'
   }
 
-  return (
+  return ( // diseño de tarjeta de tarea
     <div
       className={`task-card
         ${isCompleted ? 'completed' : ''}

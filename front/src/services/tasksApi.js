@@ -1,5 +1,6 @@
 const API_URL = 'http://localhost:4000/tasks'
 
+// Metodos HTTP
 export const getTasks = async () => {
   const res = await fetch(API_URL)
   return res.json()
