@@ -1,6 +1,9 @@
+// importar instancia de supabase
 import { supabase } from '../config/db.js'
 
-export const getTasks = async (_, res) => {
+// obtener tareas
+export const getTasks = async (_, res) => { // res para responder y req para pedir
+                                            // en este caso se coloca _ porque no necesitamos req
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
@@ -9,9 +12,10 @@ export const getTasks = async (_, res) => {
   res.json(data)
 }
 
-export const createTask = async (req, res) => {
-  const { title, description, due_date } = req.body
-
+// crear tarea
+export const createTask = async (req, res) => { // esta instancia si necesita req y res
+  const { title, description, due_date } = req.body // toma los atributos de la bd
+  // crear una fila
   const { data, error } = await supabase
     .from('tasks')
     .insert([{
@@ -25,6 +29,7 @@ export const createTask = async (req, res) => {
   res.status(201).json(data[0])
 }
 
+// XXXXX actualizar tarea XXXXX ¡¡¡EDITAR!!!
 export const updateTask = async (req, res) => {
   const { id } = req.params
 
@@ -38,6 +43,7 @@ export const updateTask = async (req, res) => {
   res.json(data[0])
 }
 
+// eliminar tarea
 export const deleteTask = async (req, res) => {
   const { id } = req.params
 

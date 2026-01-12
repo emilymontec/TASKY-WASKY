@@ -6,16 +6,16 @@ export default function TaskForm({ onCreate }) {
   const [dueDate, setDueDate] = useState('')
 
   const submit = (e) => {
-    e.preventDefault()
-    if (!title.trim()) return
-
+    e.preventDefault() // evita que el navegador recargue la pagina al enviar el formulario
+    if (!title.trim()) return // no crear tarea si el título está vacio
+// creacion de tarea
     onCreate({ title, description, due_date: dueDate || null })
     setTitle('')
     setDescription('')
     setDueDate('')
   }
 
-  return (
+  return ( // diseño formulario
     <form className="task-form" onSubmit={submit}>
       <input
         placeholder="Nueva tarea"

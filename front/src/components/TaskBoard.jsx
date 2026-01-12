@@ -1,21 +1,22 @@
-import { useEffect, useState } from 'react'
-import { getTasks, createTask, deleteTask, updateTask } from '../services/tasksApi'
-import TaskCard from './TaskCard'
-import TaskForm from './TaskForm'
+import { useEffect, useState } from 'react' // importar hooks
+// useState guarda las tareas en una lista
+import { getTasks, createTask, deleteTask, updateTask } from '../services/tasksApi' // importar servicios (funciones)
+import TaskCard from './TaskCard' // importar TaskCard (tarea individual)
+import TaskForm from './TaskForm' // importar TaskForm (formulario)
 
-export default function TaskBoard() {
-  const [tasks, setTasks] = useState([])
+export default function TaskBoard() { // tablero de tareas
+  const [tasks, setTasks] = useState([]) // estado inicial de tareas
 
-  const loadTasks = async () => {
-    const data = await getTasks()
+  const loadTasks = async () => { // cargar tareas
+    const data = await getTasks() // obtener tareas desde el servicio
     setTasks(data || [])
   }
 
-  useEffect(() => {
+  useEffect(() => { //
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadTasks()
+    loadTasks() // mostrar tareas al cargar el componente
   }, [])
-
+// crear tarea
   const handleCreate = async ({ title, description, due_date }) => {
     const newTask = await createTask({
       title,
@@ -23,14 +24,14 @@ export default function TaskBoard() {
       due_date,
       status: 'Pending'
     })
-    setTasks(prev => [...prev, newTask])
+    setTasks(prev => [...prev, newTask]) // agregar tarea a la lista
   }
-
+// eliminar tarea
   const handleDelete = async (id) => {
     await deleteTask(id)
     setTasks(prev => prev.filter(t => t.id !== id))
   }
-
+// cambiar estado
   const handleToggleStatus = async (task) => {
     const newStatus =
       task.status?.toLowerCase() === 'pending'
@@ -46,7 +47,7 @@ export default function TaskBoard() {
     )
   }
 
-  return (
+  return ( // diseño de tablero
     <div>
       <div className="stats">
         <div className="stat-item">🎯 Misiones Activas: {tasks.filter(t => t.status !== 'Completed').length}</div>
