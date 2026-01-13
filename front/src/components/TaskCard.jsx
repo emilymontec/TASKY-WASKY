@@ -1,3 +1,5 @@
+import { useEffect, useState, useRef } from 'react'
+
 export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // funciones de la tarjeta
   
   const formattedDate = task.created_at // fecha de creacion
@@ -11,7 +13,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
 
   let daysLeft = null // fecha de vencimiento
 
-  if (task.due_date) { // calcula cuántos dias faltan desde hoy hasta esa fecha
+  if (task.due_date) { // calcula cuántos dias faltan desde hoy hasta la fecha de vencimiento
     const dueDate = new Date(task.due_date + 'T00:00:00')
     dueDate.setHours(0, 0, 0, 0)
 
@@ -22,21 +24,84 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
 
   const isOverdue = !isCompleted && daysLeft !== null && daysLeft < 0 // tarea vencida
 
-  const isDueSoon = // tarea por vencer pronto
+  const isDueSoon = // tarea por vencer pronto (dentro de 2 dias)
     !isCompleted &&
     daysLeft !== null &&
     daysLeft >= 0 &&
     daysLeft <= 2
-// personalidad de tareas
+// personalidad de tareas basada en urgencia
   let personality = 'calm'
-  if (isOverdue) personality = 'lazy'
-  else if (isDueSoon) personality = 'energetic'
+  if (isDueSoon) personality = 'energetic'
 
   const personalityIcons = {
     calm: '🤗',
     energetic: '😨',
     lazy: '😴'
   }
+
+  // Movimiento constante de las tarjetas
+  const speed = personality === 'energetic' ? 3 : 1; // velocidad basada en personalidad
+  const [position, setPosition] = useState({
+    top: Math.random() * 350,
+    left: Math.random() * 1350
+  });
+  const velocityRef = useRef({
+    x: (Math.random() - 0.5) * speed * 2,
+    y: (Math.random() - 0.5) * speed * 2
+  });
+
+  useEffect(() => {
+    if (isCompleted) return; // tareas completadas no se mueven
+
+    // intervalo para cambiar direccion de movimiento
+    const directionIntervalTime = personality === 'energetic' ? 2000 : 5000;
+
+    const changeDirection = () => {
+      velocityRef.current = {
+        x: (Math.random() - 0.5) * speed * 2,
+        y: (Math.random() - 0.5) * speed * 2
+      };
+    };
+
+    const directionInterval = setInterval(changeDirection, directionIntervalTime);
+
+    // animacion continua usando requestAnimationFrame
+    let animationId;
+    const animate = () => {
+      setPosition(prev => {
+        let newX = prev.left + velocityRef.current.x;
+        let newY = prev.top + velocityRef.current.y;
+
+        // rebote en bordes
+        if (newX < 0) { // izquierda
+          velocityRef.current.x = -velocityRef.current.x;
+          newX = -newX;
+        }
+        if (newX > 1350) { // derecha
+          velocityRef.current.x = -velocityRef.current.x;
+          newX = 2700 - newX;
+        }
+        if (newY < 0) { // arriba
+          velocityRef.current.y = -velocityRef.current.y;
+          newY = -newY;
+        }
+        if (newY > 350) { // abajo
+          velocityRef.current.y = -velocityRef.current.y;
+          newY = 700 - newY;
+        }
+
+        return { top: newY, left: newX };
+      });
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      clearInterval(directionInterval);
+      cancelAnimationFrame(animationId);
+    };
+  }, [speed, isCompleted]);
 
   return ( // diseño de tarjeta de tarea
     <div
@@ -46,6 +111,10 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         ${isDueSoon ? 'due-soon' : ''}
         ${personality}
       `}
+      style={{
+        top: position.top + 'px',
+        left: position.left + 'px'
+      }}
     >
       <div className="task-info">
         <div className="task-title">
