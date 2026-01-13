@@ -87,34 +87,38 @@ h1 {
 }
 
 .task-card {
+  position: absolute;
+  width: 150px;
+  height: 150px;
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 15px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
   border-radius: 15px;
   background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 100%);
   border-left: 4px solid #ffcb1e; /* Pending */
-  margin-bottom: 15px;
   will-change: transform;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .task-card:hover {
-  transform: translateY(-5px);
+  transform: scale(1.05);
   box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  z-index: 10;
 }
 
 .task-card.calm {
-  animation: floatCalm 3s ease-in-out infinite;
+  /* movimiento controlado por JavaScript */
 }
 
 .task-card.energetic {
-  animation: floatEnergetic 2s ease-in-out infinite;
+  /* movimiento controlado por JavaScript */
 }
 
 .task-card.lazy {
-  animation: floatLazy 4s ease-in-out infinite;
+  /* movimiento controlado por JavaScript */
 }
 
 .task-info {
@@ -122,10 +126,9 @@ h1 {
 }
 
 .task-status {
-  margin-left: auto;
-  margin-right: 10px;
-  font-weight: bold;
-  text-transform: capitalize;
+  align-self: center;
+  font-size: 1.5rem;
+  margin: 5px 0;
 }
 
 .task-actions {
@@ -146,12 +149,12 @@ h1 {
 }
 
 .task-actions button {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.8);
-  font-size: 18px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -163,7 +166,11 @@ h1 {
 }
 
 .floating-board {
+  position: relative;
+  height: 500px;
   margin-top: 20px;
+  overflow: hidden;
+  border-radius: 15px;
 }
 
 .task-card.overdue {
@@ -176,23 +183,7 @@ h1 {
   background: linear-gradient(135deg, rgba(243, 156, 18, 0.3) 0%, rgba(243, 156, 18, 0.1) 100%);
 }
 
-@keyframes floatCalm {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0); }
-}
 
-@keyframes floatEnergetic {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0); }
-}
-
-@keyframes floatLazy {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-  100% { transform: translateY(0); }
-}
 
 /* Modal styles */
 .modal-overlay {
