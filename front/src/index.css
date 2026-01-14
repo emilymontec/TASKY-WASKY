@@ -45,10 +45,6 @@ h1 {
   font-size: 1.1rem;
 }
 
-h1 {
-  margin: 0 0 16px;
-}
-
 .task-form { /* FORMULARIO */
   display: flex;
   gap: 8px;
@@ -109,14 +105,8 @@ h1 {
   z-index: 10;
 }
 
-.task-card.calm {
-  /* movimiento controlado por JavaScript */
-}
-
-.task-card.energetic {
-  /* movimiento controlado por JavaScript */
-}
-
+.task-card.calm,
+.task-card.energetic,
 .task-card.lazy {
   /* movimiento controlado por JavaScript */
 }
@@ -192,9 +182,30 @@ h1 {
   transition: none;
 }
 
+/* Esquinas para posponer */
+.task-card.corner-top-left {
+  border-left: 4px solid #3498db;
+  border-top: 4px solid #3498db;
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, transparent 100%);
+}
 
+.task-card.corner-top-right {
+  border-right: 4px solid #f39c12;
+  border-top: 4px solid #f39c12;
+  background: linear-gradient(225deg, rgba(243, 156, 18, 0.2) 0%, transparent 100%);
+}
 
-/* Modal styles */
+.task-card.corner-bottom-left {
+  border-left: 4px solid #9b59b6;
+  border-bottom: 4px solid #9b59b6;
+  background: linear-gradient(45deg, rgba(155, 89, 182, 0.2) 0%, transparent 100%);
+}
+
+.task-card.corner-bottom-right {
+  border-right: 4px solid #e74c3c;
+  border-bottom: 4px solid #e74c3c;
+  background: linear-gradient(315deg, rgba(231, 76, 60, 0.2) 0%, transparent 100%);
+}
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -234,7 +245,8 @@ h1 {
   margin-top: 20px;
 }
 
-.modal-actions button { /* Boton actualizar */
+.modal-actions button {
+  /* Boton actualizar y cancelar */
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
@@ -243,7 +255,7 @@ h1 {
   cursor: pointer;
   transition: transform 0.2s ease;
   font-size: 15px;
-  font-style: bold;
+  font-weight: bold;
   width: auto;
 }
 
@@ -251,7 +263,7 @@ h1 {
   transform: scale(1.05);
 }
 
-.modal-actions button[type="button"] { /* Boton cancelar */
+.modal-actions button[type="button"] {
   background: #ccc;
   color: #333;
 }
@@ -275,16 +287,4 @@ h1 {
 .modal-content .task-form textarea {
   resize: vertical;
   min-height: 80px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-group label {
-  font-weight: bold;
-  color: #4a5568;
-  font-size: 14px;
 }
