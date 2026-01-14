@@ -1,31 +1,55 @@
 const API_URL = 'http://localhost:4000/tasks'
 
-// Metodos HTTP
+// Métodos HTTP
 export const getTasks = async () => {
-  const res = await fetch(API_URL)
-  return res.json()
+  try {
+    const res = await fetch(API_URL)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (error) {
+    console.error('Error en getTasks:', error)
+    throw error
+  }
 }
 
 export const createTask = async (task) => {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(task)
-  })
-  return res.json()
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (error) {
+    console.error('Error en createTask:', error)
+    throw error
+  }
 }
 
 export const deleteTask = async (id) => {
-  await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE'
-  })
+  try {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE'
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  } catch (error) {
+    console.error('Error en deleteTask:', error)
+    throw error
+  }
 }
 
 export const updateTask = async (id, data) => {
-  const res = await fetch(`${API_URL}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  })
-  return res.json()
+  try {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (error) {
+    console.error('Error en updateTask:', error)
+    throw error
+  }
 }

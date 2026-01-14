@@ -99,33 +99,6 @@ h1 {
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.task-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-  z-index: 10;
-}
-
-.task-card.calm,
-.task-card.energetic,
-.task-card.lazy {
-  /* movimiento controlado por JavaScript */
-}
-
-.task-info {
-  flex: 1;
-}
-
-.task-status {
-  align-self: center;
-  font-size: 1.5rem;
-  margin: 5px 0;
-}
-
-.task-actions {
-  display: flex;
-  gap: 6px;
-}
-
 .task-card.completed {
   animation: none;
   border-left: 4px solid #2ecc71;
@@ -180,31 +153,6 @@ h1 {
   cursor: grabbing;
   transform: scale(1.08);
   transition: none;
-}
-
-/* Esquinas para posponer */
-.task-card.corner-top-left {
-  border-left: 4px solid #3498db;
-  border-top: 4px solid #3498db;
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, transparent 100%);
-}
-
-.task-card.corner-top-right {
-  border-right: 4px solid #f39c12;
-  border-top: 4px solid #f39c12;
-  background: linear-gradient(225deg, rgba(243, 156, 18, 0.2) 0%, transparent 100%);
-}
-
-.task-card.corner-bottom-left {
-  border-left: 4px solid #9b59b6;
-  border-bottom: 4px solid #9b59b6;
-  background: linear-gradient(45deg, rgba(155, 89, 182, 0.2) 0%, transparent 100%);
-}
-
-.task-card.corner-bottom-right {
-  border-right: 4px solid #e74c3c;
-  border-bottom: 4px solid #e74c3c;
-  background: linear-gradient(315deg, rgba(231, 76, 60, 0.2) 0%, transparent 100%);
 }
 .modal-overlay {
   position: fixed;
