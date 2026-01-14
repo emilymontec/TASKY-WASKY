@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { updateTask } from '../services/tasksApi'
 
 export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // funciones de la tarjeta
   
@@ -42,13 +43,72 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
   // Movimiento constante de las tarjetas
   const speed = personality === 'energetic' ? 3 : 1; // velocidad basada en personalidad
   const [position, setPosition] = useState(() => ({
-    top: Math.random() * 350,
-    left: Math.random() * 1350
+    top: task.position?.top ?? Math.random() * 350,
+    left: task.position?.left ?? Math.random() * 1350
   }));
   const velocityRef = useRef();
+  
+  // Estado para drag & drop
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
+
+  // Handlers para drag & drop
+  const handleMouseDown = (e) => {
+    if (isCompleted || isDragging) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const boardRect = cardRef.current.parentElement.getBoundingClientRect();
+    
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+    setIsDragging(true);
+  };
 
   useEffect(() => {
-    if (isCompleted) return; // tareas completadas no se mueven
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      const boardRect = cardRef.current.parentElement.getBoundingClientRect();
+      let newLeft = e.clientX - boardRect.left - dragOffset.x;
+      let newTop = e.clientY - boardRect.top - dragOffset.y;
+
+      // Mantener dentro del tablero
+      newLeft = Math.max(0, Math.min(newLeft, boardRect.width - 250));
+      newTop = Math.max(0, Math.min(newTop, boardRect.height - 80));
+
+      setPosition({
+        top: newTop,
+        left: newLeft
+      });
+    };
+
+    const handleMouseUp = async () => {
+      setIsDragging(false);
+      // Guardar la posición en la base de datos
+      if (position.top !== null && position.left !== null) {
+        await updateTask(task.id, {
+          position: {
+            top: Math.round(position.top),
+            left: Math.round(position.left)
+          }
+        });
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, position, task.id]);
+
+  useEffect(() => {
+    if (isCompleted || isDragging) return; // tareas completadas no se mueven y tampoco mientras se arrastra
 
     // inicializar velocidad si no está
     if (!velocityRef.current) {
@@ -102,20 +162,25 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       clearInterval(directionInterval);
       cancelAnimationFrame(animationId);
     };
-  }, [speed, isCompleted, personality]);
+  }, [speed, isCompleted, personality, isDragging]);
 
   return ( // diseño de tarjeta de tarea
     <div
+      ref={cardRef}
       className={`task-card
         ${isCompleted ? 'completed' : ''}
         ${isOverdue ? 'overdue' : ''}
         ${isDueSoon ? 'due-soon' : ''}
         ${personality}
+        ${isDragging ? 'dragging' : ''}
       `}
       style={{
         top: position.top + 'px',
-        left: position.left + 'px'
+        left: position.left + 'px',
+        cursor: isCompleted ? 'default' : 'grab',
+        userSelect: 'none'
       }}
+      onMouseDown={handleMouseDown}
     >
       <div className="task-info">
         <div className="task-title">
