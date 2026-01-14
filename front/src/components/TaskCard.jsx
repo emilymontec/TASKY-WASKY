@@ -41,17 +41,22 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
 
   // Movimiento constante de las tarjetas
   const speed = personality === 'energetic' ? 3 : 1; // velocidad basada en personalidad
-  const [position, setPosition] = useState({
+  const [position, setPosition] = useState(() => ({
     top: Math.random() * 350,
     left: Math.random() * 1350
-  });
-  const velocityRef = useRef({
-    x: (Math.random() - 0.5) * speed * 2,
-    y: (Math.random() - 0.5) * speed * 2
-  });
+  }));
+  const velocityRef = useRef();
 
   useEffect(() => {
     if (isCompleted) return; // tareas completadas no se mueven
+
+    // inicializar velocidad si no está
+    if (!velocityRef.current) {
+      velocityRef.current = {
+        x: (Math.random() - 0.5) * speed * 2,
+        y: (Math.random() - 0.5) * speed * 2
+      };
+    }
 
     // intervalo para cambiar direccion de movimiento
     const directionIntervalTime = personality === 'energetic' ? 2000 : 5000;
@@ -72,22 +77,18 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         let newX = prev.left + velocityRef.current.x;
         let newY = prev.top + velocityRef.current.y;
 
-        // rebote en bordes
+        // rebote en bordes (ahora envuelve alrededor del tablero)
         if (newX < 0) { // izquierda
-          velocityRef.current.x = -velocityRef.current.x;
-          newX = -newX;
+          newX += 1350;
         }
         if (newX > 1350) { // derecha
-          velocityRef.current.x = -velocityRef.current.x;
-          newX = 2700 - newX;
+          newX -= 1350;
         }
         if (newY < 0) { // arriba
-          velocityRef.current.y = -velocityRef.current.y;
-          newY = -newY;
+          newY += 350;
         }
         if (newY > 350) { // abajo
-          velocityRef.current.y = -velocityRef.current.y;
-          newY = 700 - newY;
+          newY -= 350;
         }
 
         return { top: newY, left: newX };
@@ -101,7 +102,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       clearInterval(directionInterval);
       cancelAnimationFrame(animationId);
     };
-  }, [speed, isCompleted]);
+  }, [speed, isCompleted, personality]);
 
   return ( // diseño de tarjeta de tarea
     <div
