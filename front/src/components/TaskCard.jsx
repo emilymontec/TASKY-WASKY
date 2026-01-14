@@ -51,6 +51,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
   // Estado para drag & drop
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [cornerZone, setCornerZone] = useState(null); // detecta esquina
   const cardRef = useRef(null);
 
   // Handlers para drag & drop
@@ -65,6 +66,63 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       y: e.clientY - rect.top
     });
     setIsDragging(true);
+  };
+
+  // Handler para doble click - completar tarea
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    onToggle(task);
+  };
+
+  // Función para posponer según la esquina
+  const postponeTask = (corner) => {
+    const currentDate = task.due_date ? new Date(task.due_date + 'T00:00:00') : new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    let daysToAdd = 0;
+
+    switch (corner) {
+      case 'top-left':
+        daysToAdd = 1; // +1 día
+        break;
+      case 'top-right':
+        daysToAdd = 3; // +3 días
+        break;
+      case 'bottom-left':
+        daysToAdd = 7; // +1 semana
+        break;
+      case 'bottom-right':
+        daysToAdd = 30; // +1 mes
+        break;
+      default:
+        return;
+    }
+
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + daysToAdd);
+    const dateString = newDate.toISOString().split('T')[0];
+
+    return dateString;
+  };
+
+  // Detectar qué esquina está más cerca
+  const detectCorner = (x, y, boardWidth, boardHeight) => {
+    const threshold = 100; // píxeles desde la esquina para activar
+    
+    // Calcular distancias a las esquinas
+    const distTopLeft = Math.sqrt(x * x + y * y);
+    const distTopRight = Math.sqrt((boardWidth - x) ** 2 + y * y);
+    const distBottomLeft = Math.sqrt(x * x + (boardHeight - y) ** 2);
+    const distBottomRight = Math.sqrt((boardWidth - x) ** 2 + (boardHeight - y) ** 2);
+
+    const minDist = Math.min(distTopLeft, distTopRight, distBottomLeft, distBottomRight);
+
+    if (minDist > threshold) return null;
+
+    if (minDist === distTopLeft) return 'top-left';
+    if (minDist === distTopRight) return 'top-right';
+    if (minDist === distBottomLeft) return 'bottom-left';
+    if (minDist === distBottomRight) return 'bottom-right';
+    return null;
   };
 
   useEffect(() => {
@@ -83,19 +141,40 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         top: newTop,
         left: newLeft
       });
+
+      // Detectar esquina
+      const corner = detectCorner(newLeft, newTop, boardRect.width - 250, boardRect.height - 80);
+      setCornerZone(corner);
     };
 
     const handleMouseUp = async () => {
       setIsDragging(false);
-      // Guardar la posición en la base de datos
-      if (position.top !== null && position.left !== null) {
-        await updateTask(task.id, {
-          position: {
-            top: Math.round(position.top),
-            left: Math.round(position.left)
-          }
-        });
+      
+      // Si se suelta en una esquina, posponer la tarea
+      if (cornerZone) {
+        const newDueDate = postponeTask(cornerZone);
+        if (newDueDate) {
+          await updateTask(task.id, {
+            due_date: newDueDate,
+            position: {
+              top: Math.round(position.top),
+              left: Math.round(position.left)
+            }
+          });
+        }
+      } else {
+        // Guardar la posición en la base de datos
+        if (position.top !== null && position.left !== null) {
+          await updateTask(task.id, {
+            position: {
+              top: Math.round(position.top),
+              left: Math.round(position.left)
+            }
+          });
+        }
       }
+      
+      setCornerZone(null);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -105,7 +184,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, position, task.id]);
+  }, [isDragging, dragOffset, position, task.id, cornerZone]);
 
   useEffect(() => {
     if (isCompleted || isDragging) return; // tareas completadas no se mueven y tampoco mientras se arrastra
@@ -173,6 +252,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         ${isDueSoon ? 'due-soon' : ''}
         ${personality}
         ${isDragging ? 'dragging' : ''}
+        ${cornerZone ? 'corner-' + cornerZone : ''}
       `}
       style={{
         top: position.top + 'px',
@@ -181,6 +261,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         userSelect: 'none'
       }}
       onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
     >
       <div className="task-info">
         <div className="task-title">
