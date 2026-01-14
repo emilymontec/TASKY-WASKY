@@ -10,55 +10,86 @@ export default function TaskBoard() { // tablero de tareas
   const [editingTask, setEditingTask] = useState(null) // tarea en edición
 
   const loadTasks = async () => { // cargar tareas
-    const data = await getTasks() // obtener tareas desde el servicio
-    setTasks(data || [])
+    try {
+      const data = await getTasks() // obtener tareas desde el servicio
+      setTasks(data || [])
+    } catch (error) {
+      console.error('Error cargando tareas:', error)
+      setTasks([])
+    }
   }
 
-  useEffect(() => { //
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
     loadTasks() // mostrar tareas al cargar el componente
   }, [])
-// crear tarea
+
+  // crear tarea
   const handleCreate = async ({ title, description, due_date }) => {
-    const newTask = await createTask({
-      title,
-      description,
-      due_date,
-      status: 'Pending'
-    })
-    setTasks(prev => [...prev, newTask]) // agregar tarea a la lista
+    try {
+      const newTask = await createTask({
+        title,
+        description,
+        due_date,
+        status: 'Pending'
+      })
+      if (newTask) {
+        setTasks(prev => [...prev, newTask]) // agregar tarea a la lista
+      }
+    } catch (error) {
+      console.error('Error creando tarea:', error)
+      alert('Error al crear la tarea')
+    }
   }
-// eliminar tarea
+
+  // eliminar tarea
   const handleDelete = async (id) => {
-    await deleteTask(id)
-    setTasks(prev => prev.filter(t => t.id !== id))
+    try {
+      await deleteTask(id)
+      setTasks(prev => prev.filter(t => t.id !== id))
+    } catch (error) {
+      console.error('Error eliminando tarea:', error)
+      alert('Error al eliminar la tarea')
+    }
   }
-// cambiar estado
+
+  // cambiar estado
   const handleToggleStatus = async (task) => {
-    const newStatus =
-      task.status?.toLowerCase() === 'pending'
-        ? 'Completed'
-        : 'Pending'
+    try {
+      const newStatus =
+        task.status?.toLowerCase() === 'pending'
+          ? 'Completed'
+          : 'Pending'
 
-    const updated = await updateTask(task.id, {
-      status: newStatus
-    })
+      const updated = await updateTask(task.id, {
+        status: newStatus
+      })
 
-    setTasks(prev =>
-      prev.map(t => (t.id === task.id ? updated : t))
-    )
+      setTasks(prev =>
+        prev.map(t => (t.id === task.id ? updated : t))
+      )
+    } catch (error) {
+      console.error('Error actualizando estado:', error)
+      alert('Error al actualizar el estado')
+    }
   }
-// editar tarea
+
+  // editar tarea
   const handleEdit = (task) => {
     setEditingTask(task)
   }
-// actualizar tarea
+
+  // actualizar tarea
   const handleUpdate = async (id, data) => {
-    const updated = await updateTask(id, data)
-    setTasks(prev =>
-      prev.map(t => (t.id === id ? updated : t))
-    )
-    setEditingTask(null)
+    try {
+      const updated = await updateTask(id, data)
+      setTasks(prev =>
+        prev.map(t => (t.id === id ? updated : t))
+      )
+      setEditingTask(null)
+    } catch (error) {
+      console.error('Error actualizando tarea:', error)
+      alert('Error al actualizar la tarea')
+    }
   }
 
   return ( // diseño de tablero

@@ -30,7 +30,8 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
     daysLeft !== null &&
     daysLeft >= 0 &&
     daysLeft <= 2
-// personalidad de tareas basada en urgencia
+
+  // personalidad de tareas basada en urgencia
   let personality = 'calm'
   if (isDueSoon) personality = 'energetic'
 
@@ -57,10 +58,9 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
   // Handlers para drag & drop
   const handleMouseDown = (e) => {
     if (isCompleted || isDragging) return;
-    
+
     const rect = cardRef.current.getBoundingClientRect();
-    const boardRect = cardRef.current.parentElement.getBoundingClientRect();
-    
+
     setDragOffset({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
@@ -107,22 +107,19 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
   // Detectar qué esquina está más cerca
   const detectCorner = (x, y, boardWidth, boardHeight) => {
     const threshold = 100; // píxeles desde la esquina para activar
+    const distances = {
+      'top-left': Math.sqrt(x * x + y * y),
+      'top-right': Math.sqrt((boardWidth - x) ** 2 + y * y),
+      'bottom-left': Math.sqrt(x * x + (boardHeight - y) ** 2),
+      'bottom-right': Math.sqrt((boardWidth - x) ** 2 + (boardHeight - y) ** 2)
+    };
     
-    // Calcular distancias a las esquinas
-    const distTopLeft = Math.sqrt(x * x + y * y);
-    const distTopRight = Math.sqrt((boardWidth - x) ** 2 + y * y);
-    const distBottomLeft = Math.sqrt(x * x + (boardHeight - y) ** 2);
-    const distBottomRight = Math.sqrt((boardWidth - x) ** 2 + (boardHeight - y) ** 2);
-
-    const minDist = Math.min(distTopLeft, distTopRight, distBottomLeft, distBottomRight);
-
-    if (minDist > threshold) return null;
-
-    if (minDist === distTopLeft) return 'top-left';
-    if (minDist === distTopRight) return 'top-right';
-    if (minDist === distBottomLeft) return 'bottom-left';
-    if (minDist === distBottomRight) return 'bottom-right';
-    return null;
+    const nearest = Object.entries(distances).reduce((min, [corner, dist]) => 
+      dist < min.dist ? { corner, dist } : min, 
+      { corner: null, dist: Infinity }
+    );
+    
+    return nearest.dist <= threshold ? nearest.corner : null;
   };
 
   useEffect(() => {
@@ -184,7 +181,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, position, task.id, cornerZone]);
+  }, [isDragging, dragOffset, position, task.id, cornerZone, postponeTask]);
 
   useEffect(() => {
     if (isCompleted || isDragging) return; // tareas completadas no se mueven y tampoco mientras se arrastra
@@ -252,7 +249,6 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         ${isDueSoon ? 'due-soon' : ''}
         ${personality}
         ${isDragging ? 'dragging' : ''}
-        ${cornerZone ? 'corner-' + cornerZone : ''}
       `}
       style={{
         top: position.top + 'px',
