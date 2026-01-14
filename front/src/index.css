@@ -183,6 +183,15 @@ h1 {
   background: linear-gradient(135deg, rgba(243, 156, 18, 0.3) 0%, rgba(243, 156, 18, 0.1) 100%);
 }
 
+.task-card.dragging {
+  opacity: 0.95;
+  z-index: 1000;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  cursor: grabbing;
+  transform: scale(1.08);
+  transition: none;
+}
+
 
 
 /* Modal styles */
