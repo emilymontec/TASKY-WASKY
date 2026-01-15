@@ -52,7 +52,6 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
   // Estado para drag & drop
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [cornerZone, setCornerZone] = useState(null); // detecta esquina
   const cardRef = useRef(null);
 
   // Handlers para drag & drop
@@ -74,54 +73,6 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
     onToggle(task);
   };
 
-  // Función para posponer según la esquina
-  const postponeTask = (corner) => {
-    const currentDate = task.due_date ? new Date(task.due_date + 'T00:00:00') : new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    let daysToAdd = 0;
-
-    switch (corner) {
-      case 'top-left':
-        daysToAdd = 1; // +1 día
-        break;
-      case 'top-right':
-        daysToAdd = 3; // +3 días
-        break;
-      case 'bottom-left':
-        daysToAdd = 7; // +1 semana
-        break;
-      case 'bottom-right':
-        daysToAdd = 30; // +1 mes
-        break;
-      default:
-        return;
-    }
-
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + daysToAdd);
-    const dateString = newDate.toISOString().split('T')[0];
-
-    return dateString;
-  };
-
-  // Detectar qué esquina está más cerca
-  const detectCorner = (x, y, boardWidth, boardHeight) => {
-    const threshold = 100; // píxeles desde la esquina para activar
-    const distances = {
-      'top-left': Math.sqrt(x * x + y * y),
-      'top-right': Math.sqrt((boardWidth - x) ** 2 + y * y),
-      'bottom-left': Math.sqrt(x * x + (boardHeight - y) ** 2),
-      'bottom-right': Math.sqrt((boardWidth - x) ** 2 + (boardHeight - y) ** 2)
-    };
-    
-    const nearest = Object.entries(distances).reduce((min, [corner, dist]) => 
-      dist < min.dist ? { corner, dist } : min, 
-      { corner: null, dist: Infinity }
-    );
-    
-    return nearest.dist <= threshold ? nearest.corner : null;
-  };
-
   useEffect(() => {
     if (!isDragging) return;
 
@@ -138,40 +89,19 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         top: newTop,
         left: newLeft
       });
-
-      // Detectar esquina
-      const corner = detectCorner(newLeft, newTop, boardRect.width - 250, boardRect.height - 80);
-      setCornerZone(corner);
     };
 
     const handleMouseUp = async () => {
       setIsDragging(false);
-      
-      // Si se suelta en una esquina, posponer la tarea
-      if (cornerZone) {
-        const newDueDate = postponeTask(cornerZone);
-        if (newDueDate) {
-          await updateTask(task.id, {
-            due_date: newDueDate,
-            position: {
-              top: Math.round(position.top),
-              left: Math.round(position.left)
-            }
-          });
-        }
-      } else {
-        // Guardar la posición en la base de datos
-        if (position.top !== null && position.left !== null) {
-          await updateTask(task.id, {
-            position: {
-              top: Math.round(position.top),
-              left: Math.round(position.left)
-            }
-          });
-        }
+      // Guardar la posición en la base de datos
+      if (position.top !== null && position.left !== null) {
+        await updateTask(task.id, {
+          position: {
+            top: Math.round(position.top),
+            left: Math.round(position.left)
+          }
+        });
       }
-      
-      setCornerZone(null);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -181,7 +111,7 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, position, task.id, cornerZone, postponeTask]);
+  }, [isDragging, dragOffset, position, task.id]);
 
   useEffect(() => {
     if (isCompleted || isDragging) return; // tareas completadas no se mueven y tampoco mientras se arrastra
@@ -271,12 +201,13 @@ export default function TaskCard({ task, onDelete, onToggle, onEdit }) { // func
         )}
 
         <div className="task-meta">
-          <span>{task.status}</span> · <span>{formattedDate}</span>
+          <span>{task.status}</span> ·{' '}
+          <span>{formattedDate}</span>
           {task.due_date && (
             <>
-              {' '}·{' '}
+              {' '}<br />
               <span>
-                Fin: {new Date(task.due_date + 'T00:00:00').toLocaleDateString()}
+                Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString()}
               </span>
             </>
           )}
