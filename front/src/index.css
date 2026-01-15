@@ -90,18 +90,20 @@ h1 {
   flex-direction: column;
   justify-content: space-between;
   padding: 10px;
+  padding-bottom: 18px; /* dejar espacio para acciones */
   border-radius: 15px;
   background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 100%);
-  border-left: 4px solid #ffcb1e; /* Pending */
+  border-top: 4px solid #ffcb1e; /* Pending */
   will-change: transform;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  overflow: hidden; /* asegurar que elementos queden dentro del borde redondeado */
 }
 
 .task-card.completed {
   animation: none;
-  border-left: 4px solid #2ecc71;
+  border-top: 4px solid #2ecc71;
   opacity: 0.6;
   text-decoration: line-through;
 }
@@ -123,9 +125,70 @@ h1 {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+/* posicionar acciones dentro de la tarjeta para evitar desbordes */
+.task-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Mostrar acciones solo al hover/focus; mantener visibles en pantallas táctiles */
+.task-actions {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.task-card:hover .task-actions,
+.task-card:focus-within .task-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* En dispositivos que no soportan hover (touch), mostrar siempre las acciones */
+@media (hover: none) {
+  .task-actions {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
 .task-actions button:hover {
   transform: scale(1.1);
   background: rgba(255, 255, 255, 1);
+}
+
+/* Emoji centrado y tamaño */
+.task-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 20%) scale(1);
+  font-size: 50px;
+  line-height: 1;
+  pointer-events: none;
+  transition: transform 180ms ease, font-size 180ms ease, opacity 180ms ease;
+  opacity: 0.95;
+}
+
+/* Cuando aparecen las acciones (hover/focus), reducir ligeramente el emoji */
+.task-card:hover .task-status,
+.task-card:focus-within .task-status {
+  transform: translate(-50%, 5%) scale(0.78);
+  font-size: 40px;
+  opacity: 0.9;
+}
+
+/* En dispositivos táctiles donde las acciones son siempre visibles, mantener emoji reducido */
+@media (hover: none) {
+  .task-status { transform: translate(-50%, -50%) scale(0.78); font-size: 30px; }
 }
 
 .floating-board {
@@ -137,12 +200,12 @@ h1 {
 }
 
 .task-card.overdue {
-  border-left-color: #e74c3c;
+  border-top-color: #e74c3c;
   background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(231, 76, 60, 0.1) 100%);
 }
 
 .task-card.due-soon {
-  border-left-color: #f39c12;
+  border-top-color: #f39c12;
   background: linear-gradient(135deg, rgba(243, 156, 18, 0.3) 0%, rgba(243, 156, 18, 0.1) 100%);
 }
 
