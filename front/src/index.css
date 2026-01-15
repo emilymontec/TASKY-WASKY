@@ -11,7 +11,7 @@ body {
 
 .app { /* TABLERO */
   background: rgba(255, 255, 255, 0.95);
-  padding: 10px;
+  padding: 0px;
   border-radius: 20px;
   width: 1500px;
   height: 700px;
@@ -193,7 +193,7 @@ h1 {
 
 .floating-board {
   position: relative;
-  height: 500px;
+  height: 480px;
   margin-top: 20px;
   overflow: hidden;
   border-radius: 15px;
