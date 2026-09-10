@@ -70,6 +70,14 @@ model User {
   // ⚠️ Corrección (sección 9/14.4): necesario para normalizar día/hora de
   // actividad a la hora local del usuario en vez de UTC. IANA tz name.
   timezone  String   @default("UTC")
+  // ⚠️ Fase 6: opt-in explícito para incluir repos privados en el
+  // análisis. Por defecto false — el MVP es solo-públicos, y ampliar el
+  // alcance requiere una decisión consciente del usuario, nunca un
+  // default activado. `privateReposEnabledAt` es auditoría de cuándo se
+  // activó por última vez (se limpia a null al desactivar, ver
+  // lib/settings/service.ts).
+  privateReposEnabled   Boolean   @default(false)
+  privateReposEnabledAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -18,6 +18,9 @@ type Events = {
   "wrapped/generate.requested": {
     data: { userId: string; year: number };
   };
+  "privacy/purge-private-repos.requested": {
+    data: { userId: string };
+  };
 };
 
 export const inngest = new Inngest({

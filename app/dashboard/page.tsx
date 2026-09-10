@@ -50,6 +50,12 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href="/settings"
+            className="rounded-full border border-wrapped-border px-4 py-2 text-sm text-neutral-300 hover:border-wrapped-accent hover:text-wrapped-accent"
+          >
+            Configuración
+          </Link>
+          <Link
             href="/compare"
             className="rounded-full border border-wrapped-border px-4 py-2 text-sm text-neutral-300 hover:border-wrapped-accent hover:text-wrapped-accent"
           >

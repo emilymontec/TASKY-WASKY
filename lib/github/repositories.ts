@@ -10,13 +10,30 @@ export interface CollectedRepository {
   url: string;
 }
 
+export interface GetRepositoriesOptions {
+  /**
+   * ⚠️ Fase 6 (repos privados, opt-in). Default `false` — mantiene el
+   * comportamiento MVP (sección 5: solo públicos) como el camino seguro
+   * por defecto. Solo pasa `true` cuando el caller ya verificó que
+   * `User.privateReposEnabled` es true Y el token tiene el scope `repo`
+   * (ver lib/jobs/sync.ts) — este filtro es la última línea de defensa,
+   * no la única: si el token no tiene el scope, GitHub ni siquiera
+   * devuelve los repos privados, pero filtramos explícitamente igual
+   * para que el contrato sea legible acá, no implícito en el scope del
+   * token.
+   */
+  includePrivate?: boolean;
+}
+
 /**
  * Trae los repositorios del usuario autenticado, paginando hasta agotar
- * resultados. ⚠️ Alcance MVP (sección 5): se filtran los privados — el
- * scope OAuth solicitado (public_repo) ni siquiera los devolvería, pero
- * filtramos explícitamente para dejar el contrato claro en el código.
+ * resultados.
  */
-export async function getRepositories(client: Octokit): Promise<CollectedRepository[]> {
+export async function getRepositories(
+  client: Octokit,
+  options: GetRepositoriesOptions = {}
+): Promise<CollectedRepository[]> {
+  const includePrivate = options.includePrivate ?? false;
   const repos: CollectedRepository[] = [];
   let page = 1;
   const perPage = 100;
@@ -33,7 +50,7 @@ export async function getRepositories(client: Octokit): Promise<CollectedReposit
     );
 
     for (const repo of data) {
-      if (repo.private) continue; // MVP: solo públicos (sección 5)
+      if (repo.private && !includePrivate) continue;
       repos.push({
         githubId: String(repo.id),
         name: repo.name,

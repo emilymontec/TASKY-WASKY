@@ -5,9 +5,15 @@ import { prisma } from "@/lib/db/prisma";
 import { encryptToken } from "@/lib/auth/crypto";
 
 // ⚠️ Scopes mínimos necesarios para el MVP (sección 10 y 5): solo lectura de
-// perfil y repos PÚBLICOS. `repo` (acceso a privados) queda para la fase
-// opt-in posterior — no se solicita aquí.
-const GITHUB_SCOPES = "read:user user:email public_repo";
+// perfil y repos PÚBLICOS. `repo` (acceso a privados) es un upgrade
+// explícito posterior — ver GITHUB_SCOPES_WITH_PRIVATE_REPOS (Fase 6),
+// nunca se pide en el login inicial.
+export const GITHUB_SCOPES = "read:user user:email public_repo";
+
+// Fase 6 (repos privados, opt-in): scope ampliado que se solicita SOLO
+// cuando el usuario elige explícitamente conectar repos privados desde
+// /settings — nunca en el login inicial, nunca por defecto.
+export const GITHUB_SCOPES_WITH_PRIVATE_REPOS = "read:user user:email public_repo repo";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -26,13 +32,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }
   },
   events: {
-    // Se dispara cuando Auth.js vincula la cuenta de GitHub tras el OAuth
-    // callback. Aquí espejamos el access/refresh token — CIFRADOS — en
-    // nuestro propio modelo GitHubAccount (sección 9), que es el que usa
-    // el GitHubCollector para llamar a la API.
-    async linkAccount({ user, account }) {
-      if (account.provider !== "github") return;
+    /**
+     * ⚠️ A propósito NO se usa `events.linkAccount` para persistir el
+     * token: ese evento solo se dispara la PRIMERA vez que se vincula la
+     * cuenta de GitHub. El flujo de autorización incremental de la Fase
+     * 6 (pedir el scope `repo` más adelante, para un usuario que ya
+     * tiene la cuenta vinculada) pasa de nuevo por sign-in, no por
+     * link-account — así que la única forma de capturar el token/scope
+     * ACTUALIZADO en una reautorización es escuchar `signIn`, que se
+     * dispara en cada inicio de sesión, sea el primero o el número 50.
+     */
+    async signIn({ user, account, profile }) {
+      if (!user.id || account?.provider !== "github") return;
 
+      // githubId/username/avatar: el adapter de Prisma solo persiste los
+      // campos "estándar" (name/email/image) — estos son propios de
+      // nuestro dominio y se completan a partir del profile de GitHub
+      // (ver https://docs.github.com/rest/users/users#get-a-user).
+      if (profile) {
+        const githubProfile = profile as unknown as {
+          id: number;
+          login: string;
+          avatar_url: string;
+        };
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            githubId: String(githubProfile.id),
+            username: githubProfile.login,
+            avatar: githubProfile.avatar_url
+          }
+        });
+      }
+
+      // Espejamos el access/refresh token — CIFRADOS — en nuestro propio
+      // modelo GitHubAccount (sección 9), que es el que usa el
+      // GitHubCollector. Corre en CADA sign-in para que una
+      // reautorización con scope ampliado (Fase 6) actualice el token
+      // guardado, no solo la primera vez.
       await prisma.gitHubAccount.upsert({
         where: { userId: user.id },
         create: {
@@ -43,9 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             : null,
           scope: account.scope ?? GITHUB_SCOPES,
           tokenType: account.token_type ?? "bearer",
-          expiresAt: account.expires_at
-            ? new Date(account.expires_at * 1000)
-            : null
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
         },
         update: {
           accessToken: encryptToken(String(account.access_token)),
@@ -53,39 +89,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             ? encryptToken(String(account.refresh_token))
             : undefined,
           scope: account.scope ?? GITHUB_SCOPES,
-          expiresAt: account.expires_at
-            ? new Date(account.expires_at * 1000)
-            : null
+          expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
         }
       });
 
       // Inicializa el registro de sincronización (sección 12) en IDLE.
+      // Idempotente — correr esto en cada sign-in (no solo el primero)
+      // es inofensivo.
       await prisma.syncState.upsert({
         where: { userId: user.id },
         create: { userId: user.id },
         update: {}
-      });
-    },
-    async signIn({ user, profile }) {
-      // El adapter de Prisma solo persiste los campos "estándar"
-      // (name/email/image). githubId/username/avatar/timezone son propios
-      // de nuestro dominio y los completamos aquí a partir del profile de
-      // GitHub (ver https://docs.github.com/rest/users/users#get-a-user).
-      if (!profile || !user.id) return;
-
-      const githubProfile = profile as unknown as {
-        id: number;
-        login: string;
-        avatar_url: string;
-      };
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          githubId: String(githubProfile.id),
-          username: githubProfile.login,
-          avatar: githubProfile.avatar_url
-        }
       });
     }
   },

@@ -32,6 +32,24 @@ export const syncUserData = inngest.createFunction(
       return prisma.gitHubAccount.findUniqueOrThrow({ where: { userId } });
     });
 
+    // Fase 6 (repos privados, opt-in): doble verificación antes de pedir
+    // privados — el flag del usuario Y que el token realmente tenga el
+    // scope `repo` otorgado (defensa en profundidad; si solo se
+    // verificara el flag, un token con scope desactualizado igual no
+    // devolvería privados de parte de GitHub, pero preferimos que el
+    // código sea explícito sobre la condición real, no depender
+    // implícitamente de lo que GitHub decida filtrar).
+    const user = await step.run("load-user-privacy-settings", async (): Promise<{
+      privateReposEnabled: boolean;
+    }> => {
+      const record = await prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { privateReposEnabled: true }
+      });
+      return { privateReposEnabled: record.privateReposEnabled };
+    });
+    const includePrivateRepos = user.privateReposEnabled && Boolean(account.scope?.includes("repo"));
+
     const client = createGitHubClient(account.accessToken);
     const graphqlClient = createGitHubGraphQLClient(account.accessToken);
 
@@ -40,7 +58,9 @@ export const syncUserData = inngest.createFunction(
       getVerifiedEmails(client)
     );
 
-    const repos = await step.run("fetch-repositories", () => getRepositories(client));
+    const repos = await step.run("fetch-repositories", () =>
+      getRepositories(client, { includePrivate: includePrivateRepos })
+    );
 
     await step.run("upsert-repositories", async () => {
       for (const repo of repos) {

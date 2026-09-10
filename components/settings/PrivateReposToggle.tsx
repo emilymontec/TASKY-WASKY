@@ -1,0 +1,99 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+interface PrivateReposToggleProps {
+  initialEnabled: boolean;
+  enabledAt: Date | null;
+}
+
+/**
+ * ⚠️ Requiere un click de confirmación explícito en ambas direcciones —
+ * activar y desactivar. Activar amplía qué datos se leen (sensible);
+ * desactivar dispara un borrado real de datos ya sincronizados
+ * (irreversible). Ninguna de las dos acciones debería poder dispararse
+ * por accidente con un solo click.
+ */
+export function PrivateReposToggle({ initialEnabled, enabledAt }: PrivateReposToggleProps) {
+  const router = useRouter();
+  const [enabled, setEnabled] = useState(initialEnabled);
+  const [confirming, setConfirming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function commit() {
+    setSubmitting(true);
+    setError(null);
+    const next = !enabled;
+
+    const res = await fetch("/api/settings/private-repos", {
+      method: "PATCH",
+      body: JSON.stringify({ enabled: next })
+    });
+
+    setSubmitting(false);
+    setConfirming(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data?.error ?? "No se pudo actualizar la configuración.");
+      return;
+    }
+
+    setEnabled(next);
+    router.refresh();
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-neutral-200">
+            {enabled ? "Repos privados incluidos" : "Repos privados no incluidos"}
+          </p>
+          {enabled && enabledAt && (
+            <p className="text-xs text-neutral-500">
+              Activado el {enabledAt.toLocaleDateString("es")}
+            </p>
+          )}
+        </div>
+
+        {!confirming ? (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className={`rounded-full px-4 py-2 text-sm font-medium ${
+              enabled ? "bg-white/10 text-neutral-200 hover:bg-white/20" : "bg-wrapped-accent text-black hover:opacity-90"
+            }`}
+          >
+            {enabled ? "Desactivar" : "Activar"}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="rounded-full px-3 py-2 text-sm text-neutral-400 hover:text-neutral-200"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={commit}
+              disabled={submitting}
+              className="rounded-full bg-red-500/90 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+            >
+              {submitting
+                ? "Aplicando…"
+                : enabled
+                  ? "Sí, desactivar y borrar datos privados"
+                  : "Sí, activar"}
+            </button>
+          </div>
+        )}
+      </div>
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+    </div>
+  );
+}
