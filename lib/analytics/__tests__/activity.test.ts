@@ -98,7 +98,9 @@ describe("nightActivityPercentage / weekendActivityPercentage", () => {  it("cla
 
 describe("buildDailyDistribution", () => {
   it("incluye un bucket por cada día del período, incluso sin commits", () => {
-    const period = { start: new Date("2026-06-01T00:00:00Z"), end: new Date("2026-06-05T00:00:00Z") };
+    // period.end es EXCLUSIVO: para cubrir 01-05 de junio inclusive, end
+    // debe ser el 6 de junio a medianoche (ver lib/dashboard/period.ts).
+    const period = { start: new Date("2026-06-01T00:00:00Z"), end: new Date("2026-06-06T00:00:00Z") };
     const buckets = buildDailyDistribution([commit("1", "2026-06-03T10:00:00Z")], "UTC", period);
 
     expect(buckets).toHaveLength(5);
@@ -114,7 +116,7 @@ describe("buildDailyDistribution", () => {
   });
 
   it("agrupa por fecha local, no UTC — un commit puede caer un día distinto según la timezone", () => {
-    const period = { start: new Date("2026-06-15T00:00:00Z"), end: new Date("2026-06-17T00:00:00Z") };
+    const period = { start: new Date("2026-06-15T00:00:00Z"), end: new Date("2026-06-18T00:00:00Z") };
     // 23:30 UTC del 15 -> 08:30 del 16 en Tokio
     const buckets = buildDailyDistribution([commit("1", "2026-06-15T23:30:00Z")], "Asia/Tokyo", period);
 
@@ -126,5 +128,14 @@ describe("buildDailyDistribution", () => {
     const period = { start: new Date("2026-06-10T00:00:00Z"), end: new Date("2026-06-01T00:00:00Z") };
     const buckets = buildDailyDistribution([], "UTC", period);
     expect(buckets).toEqual([]);
+  });
+
+  it("con end exclusivo, un commit justo en el límite del período queda fuera del último día generado", () => {
+    // end = 2026-06-06T00:00:00Z (exclusivo) -> el último día del rango es el 5.
+    // Un commit exactamente en period.end (medianoche del 6) no debería
+    // aparecer como parte del día 5 ni generar un bucket para el día 6.
+    const period = { start: new Date("2026-06-01T00:00:00Z"), end: new Date("2026-06-06T00:00:00Z") };
+    const buckets = buildDailyDistribution([], "UTC", period);
+    expect(buckets.map((b) => b.date)).not.toContain("2026-06-06");
   });
 });

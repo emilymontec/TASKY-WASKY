@@ -28,36 +28,53 @@ export function isPeriodOption(value: string | null): value is PeriodOption {
  * resolver el 1 de enero en la timezone de cada usuario todavía. Revisar
  * si en algún momento se vuelve una queja real de usuarios.
  *
- * ⚠️ El período se trunca al día UTC (medianoche), no al segundo exacto.
- * Esto es lo que permite que el job de Inngest que genera insights
- * (corre en segundo plano, con latencia variable) y el Route Handler que
- * los sirve (corre cuando el usuario visita el dashboard, minutos u
- * horas después) calculen el MISMO `periodStart`/`periodEnd` para el
- * mismo `PeriodOption` en el mismo día — si se usara el timestamp exacto
- * del momento de cada llamada, ambos nunca coincidirían y los insights
- * jamás matchearían con el período que el dashboard está pidiendo.
+ * ⚠️ `end` es un límite EXCLUSIVO (el instante justo después del rango),
+ * no el último instante incluido. Se define como la medianoche UTC del
+ * día siguiente a `referenceDate`. Dos motivos:
+ *
+ * 1. Determinismo: al truncar a día completo, el job de Inngest que
+ *    genera insights (corre en background con latencia variable) y el
+ *    Route Handler que los sirve (corre cuando el usuario visita el
+ *    dashboard, minutos u horas después) calculan el MISMO
+ *    `periodStart`/`periodEnd` para el mismo `PeriodOption` en el mismo
+ *    día — si se usara el timestamp exacto del momento de cada llamada,
+ *    ambos nunca coincidirían.
+ * 2. Inclusividad correcta: si `end` fuera la medianoche de HOY (en vez
+ *    de mañana), cualquier commit de hoy después de medianoche quedaría
+ *    excluido por un filtro `date <= end` — literalmente todo el día de
+ *    hoy desaparecería del período. Con `end` = medianoche de MAÑANA y
+ *    un filtro `date < end`, el día de hoy completo queda incluido.
+ *
+ * Todo el código que consume `ResolvedPeriod.end` para filtrar por fecha
+ * debe usar comparación estrictamente menor (`lt`), nunca `lte`.
  */
 function truncateToUtcDate(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+export { truncateToUtcDate };
+
 export function resolvePeriod(option: PeriodOption, referenceDate: Date = new Date()): ResolvedPeriod {
-  const end = truncateToUtcDate(referenceDate);
+  const endExclusive = truncateToUtcDate(referenceDate);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
 
   if (option === "calendarYear") {
-    return { start: new Date(Date.UTC(end.getUTCFullYear(), 0, 1)), end };
+    return {
+      start: new Date(Date.UTC(truncateToUtcDate(referenceDate).getUTCFullYear(), 0, 1)),
+      end: endExclusive
+    };
   }
 
   if (option === "rolling12") {
-    const start = new Date(end);
+    const start = new Date(endExclusive);
     start.setUTCFullYear(start.getUTCFullYear() - 1);
-    return { start, end };
+    return { start, end: endExclusive };
   }
 
   // last30
-  const start = new Date(end);
+  const start = new Date(endExclusive);
   start.setUTCDate(start.getUTCDate() - 30);
-  return { start, end };
+  return { start, end: endExclusive };
 }
 
 export const PERIOD_LABELS: Record<PeriodOption, string> = {

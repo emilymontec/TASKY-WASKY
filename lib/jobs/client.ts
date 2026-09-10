@@ -15,6 +15,9 @@ type Events = {
   "insights/generate.requested": {
     data: { userId: string; periodStart: string; periodEnd: string };
   };
+  "wrapped/generate.requested": {
+    data: { userId: string; year: number };
+  };
 };
 
 export const inngest = new Inngest({

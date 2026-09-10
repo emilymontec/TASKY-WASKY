@@ -82,6 +82,9 @@ model User {
   wrappedReports WrappedReport[]
   insights       Insight[]
   syncState      SyncState?
+  badges         Badge[]
+  comparisonsInitiated ComparisonLink[] @relation("ComparisonRequester")
+  comparisonsReceived  ComparisonLink[] @relation("ComparisonRecipient")
 }
 
 // GitHub App/OAuth token storage.
@@ -174,10 +177,25 @@ model WrappedReport {
   mostActiveHour    Int?
   longestStreak     Int
   isPublic          Boolean  @default(false)
+  // Orden narrativo fijo de los slides (Fase 3): apertura → volumen →
+  // ritmo → lenguajes → repos → racha → cierre. Se guarda como Json (no
+  // hardcodeado en el frontend) para poder reordenar o A/B testear el
+  // orden narrativo más adelante sin migrar datos existentes.
+  slidesOrder       Json
+  // Distinto de `createdAt`: `createdAt` es cuándo se creó la fila por
+  // primera vez; `generatedAt` es cuándo se generó/regeneró el contenido
+  // más reciente. Para un año cerrado ambos coinciden para siempre (nunca
+  // se regenera); para el año en curso, `generatedAt` avanza cada vez que
+  // se regenera bajo demanda.
+  generatedAt       DateTime @default(now())
   createdAt         DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Un usuario tiene a lo sumo un WrappedReport por período exacto — la
+  // generación siempre hace upsert por esta clave, nunca inserta filas
+  // duplicadas para el mismo año.
+  @@unique([userId, periodStart, periodEnd])
   @@index([userId])
 }
 
@@ -262,4 +280,63 @@ model AiUsageLog {
   createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────
+// Gamificación & Comparaciones (Fase 5 del roadmap de producto final)
+// ─────────────────────────────────────────────────────────
+
+// Un logro/badge que el usuario ganó con sus propios datos. Semántica
+// "earned once, kept forever" (sección 42, DoD de la Fase 5): una vez
+// otorgado, nunca se revoca aunque la métrica que lo originó baje después
+// (p. ej. una racha activa que se corta no le quita a nadie el badge de
+// "racha de 7 días" que ya ganó). Por eso `@@unique([userId, type])` se
+// usa con upsert de solo-creación (`update: {}`) — nunca se sobreescribe
+// un badge ya otorgado.
+model Badge {
+  id       String   @id @default(cuid())
+  userId   String
+  // Tipo cerrado — ver lib/gamification/badges.ts::BADGE_TYPES. String,
+  // no enum, por el mismo motivo que Insight.type: agregar un badge
+  // nuevo no debería requerir una migración de DB.
+  type     String
+  earnedAt DateTime @default(now())
+  // Snapshot del valor que disparó el badge (p. ej. { longestStreak: 12 }
+  // para streak_7) — útil para mostrar "lo ganaste con una racha de 12
+  // días", no solo "ganaste este badge".
+  metadata Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+// Comparación opcional entre dos usuarios (sección 42, Consideraciones:
+// "opt-in explícito por ambas partes, revocable, nunca se filtra a quien
+// no participó"). userA = quien inició la invitación; userB = a quien se
+// invitó. El estado ACCEPTED es el único que habilita ver la comparación
+// — ni siquiera los propios participantes pueden verla en PENDING.
+model ComparisonLink {
+  id          String           @id @default(cuid())
+  userAId     String
+  userBId     String
+  status      ComparisonStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
+
+  userA User @relation("ComparisonRequester", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("ComparisonRecipient", fields: [userBId], references: [id], onDelete: Cascade)
+
+  // Un mismo par de usuarios tiene a lo sumo UN vínculo de comparación,
+  // sin importar quién invitó a quién — lib/comparisons/service.ts busca
+  // en ambas direcciones antes de crear uno nuevo.
+  @@unique([userAId, userBId])
+  @@index([userBId, status])
+}
+
+enum ComparisonStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }

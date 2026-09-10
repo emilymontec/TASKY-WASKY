@@ -25,6 +25,13 @@ export interface AnalyticsLanguageInput {
 }
 
 export interface AnalyticsPeriod {
+  /** Inclusivo. */
   start: Date;
+  /**
+   * ⚠️ EXCLUSIVO — el instante justo después del rango, no el último
+   * instante incluido. Ver lib/dashboard/period.ts para el razonamiento
+   * completo. Cualquier filtro de fecha contra este límite debe usar `<`
+   * (`lt`), nunca `<=` (`lte`).
+   */
   end: Date;
 }

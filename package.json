@@ -17,6 +17,7 @@
     "@auth/prisma-adapter": "^2.7.4",
     "@octokit/rest": "^21.0.2",
     "@prisma/client": "^5.20.0",
+    "framer-motion": "^11.11.9",
     "graphql": "^16.9.0",
     "graphql-request": "^7.1.2",
     "inngest": "^3.22.2",

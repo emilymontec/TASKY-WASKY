@@ -1,5 +1,4 @@
-import type { AnalyticsCommitInput, AnalyticsPeriod } from "@/lib/analytics/types";
-import { toLocalDateParts, WEEKDAYS, shiftDateKey, type Weekday } from "@/lib/analytics/timezone";
+import type { AnalyticsCommitInput, AnalyticsPeriod } from "@/lib/analytics/types";import { toLocalDateParts, WEEKDAYS, shiftDateKey, type Weekday } from "@/lib/analytics/timezone";
 
 export interface HourBucket {
   hour: number;
@@ -114,7 +113,14 @@ export function buildDailyDistribution(
   }
 
   const startKey = toLocalDateParts(period.start, timezone).dateKey;
-  const endKey = toLocalDateParts(period.end, timezone).dateKey;
+  // ⚠️ `period.end` es un límite EXCLUSIVO (ver lib/dashboard/period.ts):
+  // el instante justo después del rango, no el último día incluido. Se
+  // resta 1ms antes de convertir a fecha local para obtener el último día
+  // REAL del rango en la timezone del usuario — sin este ajuste, un
+  // `period.end` a medianoche UTC del día siguiente podría traducirse a
+  // "mañana" también en timezones con offset positivo, agregando un día
+  // de más (vacío) al heatmap.
+  const endKey = toLocalDateParts(new Date(period.end.getTime() - 1), timezone).dateKey;
 
   const buckets: DayBucket[] = [];
   let cursor = startKey;

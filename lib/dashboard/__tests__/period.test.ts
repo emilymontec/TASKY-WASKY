@@ -3,26 +3,34 @@ import { isPeriodOption, resolvePeriod } from "@/lib/dashboard/period";
 
 describe("resolvePeriod", () => {
   const reference = new Date("2026-06-15T12:00:00Z");
-  const truncatedEnd = new Date("2026-06-15T00:00:00Z");
+  // end es exclusivo: medianoche UTC del día SIGUIENTE a reference, para
+  // que el día de hoy (15 de junio) quede completo dentro del rango.
+  const expectedEnd = new Date("2026-06-16T00:00:00Z");
 
-  it("trunca end a medianoche UTC del referenceDate", () => {
+  it("end es la medianoche UTC del día siguiente a referenceDate (exclusivo)", () => {
     const { end } = resolvePeriod("last30", reference);
-    expect(end).toEqual(truncatedEnd);
+    expect(end).toEqual(expectedEnd);
   });
 
-  it("last30 devuelve un rango de 30 días terminando en el día truncado", () => {
+  it("last30 cubre exactamente 30 días terminando hoy (hoy incluido)", () => {
     const { start, end } = resolvePeriod("last30", reference);
-    expect(end).toEqual(truncatedEnd);
+    expect(end).toEqual(expectedEnd);
     expect(Math.round((end.getTime() - start.getTime()) / 86_400_000)).toBe(30);
+    // Con `end` exclusivo, el propio 15 de junio debe caer DENTRO del
+    // rango con un filtro `date < end` — este es el bug real que se
+    // corrigió: antes `end` era la medianoche de HOY, lo que excluía
+    // cualquier commit hecho hoy.
+    const todayAt2pm = new Date("2026-06-15T14:00:00Z");
+    expect(todayAt2pm.getTime() < end.getTime()).toBe(true);
   });
 
   it("calendarYear empieza el 1 de enero del año de referenceDate", () => {
     const { start, end } = resolvePeriod("calendarYear", reference);
     expect(start.toISOString()).toBe("2026-01-01T00:00:00.000Z");
-    expect(end).toEqual(truncatedEnd);
+    expect(end).toEqual(expectedEnd);
   });
 
-  it("rolling12 retrocede exactamente un año calendario", () => {
+  it("rolling12 retrocede exactamente un año calendario desde el límite exclusivo", () => {
     const { start, end } = resolvePeriod("rolling12", reference);
     expect(start.getUTCFullYear()).toBe(2025);
     expect(start.getUTCMonth()).toBe(end.getUTCMonth());

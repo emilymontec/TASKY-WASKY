@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
-import { getAnalyticsForUser } from "@/lib/analytics/service";
+import { getAnalyticsWithScore } from "@/lib/analytics/service";
 import { getInsightsForUser } from "@/lib/insights/service";
 import { SyncPanel } from "@/app/dashboard/sync-panel";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
@@ -31,11 +32,12 @@ export default async function DashboardPage() {
 
   // El render inicial usa el mismo servicio que /api/analytics — nunca
   // duplica la lógica de armar el rango de fechas o correr el Analytics
-  // Engine (sección 13).
-  const [analytics, insights] = neverSynced
+  // Engine (sección 13). Desde la Fase 5, getAnalyticsWithScore trae el
+  // Developer Activity Score junto con el resto.
+  const [analyticsWithScore, insights] = neverSynced
     ? [null, []]
     : await Promise.all([
-        getAnalyticsForUser(userId, DEFAULT_PERIOD),
+        getAnalyticsWithScore(userId, DEFAULT_PERIOD),
         getInsightsForUser(userId)
       ]);
 
@@ -46,13 +48,27 @@ export default async function DashboardPage() {
           <h1 className="font-display text-2xl font-semibold">GitHub Wrapped</h1>
           <p className="text-neutral-400">Hola, {session.user.name ?? "developer"}</p>
         </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/compare"
+            className="rounded-full border border-wrapped-border px-4 py-2 text-sm text-neutral-300 hover:border-wrapped-accent hover:text-wrapped-accent"
+          >
+            Comparar
+          </Link>
+          <Link
+            href={`/wrapped/${new Date().getUTCFullYear()}`}
+            className="rounded-full border border-wrapped-border px-4 py-2 text-sm text-neutral-300 hover:border-wrapped-accent hover:text-wrapped-accent"
+          >
+            Ver mi Wrapped {new Date().getUTCFullYear()}
+          </Link>
+        </div>
       </header>
 
       <div className="mb-8">
         <SyncPanel />
       </div>
 
-      {neverSynced || !analytics ? (
+      {neverSynced || !analyticsWithScore ? (
         <EmptyState
           title="Todavía no hay datos"
           description="Sincroniza tu cuenta de GitHub arriba para ver tu actividad, lenguajes y rachas."
@@ -60,7 +76,11 @@ export default async function DashboardPage() {
       ) : (
         <DashboardClient
           initialPeriod={DEFAULT_PERIOD}
-          initialData={{ analytics, insights: insights as PersistedInsight[] }}
+          initialData={{
+            analytics: analyticsWithScore.analytics,
+            score: analyticsWithScore.score,
+            insights: insights as PersistedInsight[]
+          }}
         />
       )}
     </main>

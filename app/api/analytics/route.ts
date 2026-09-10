@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getAnalyticsForUser } from "@/lib/analytics/service";
+import { getAnalyticsWithScore } from "@/lib/analytics/service";
 import { isPeriodOption } from "@/lib/dashboard/period";
 
 /**
@@ -8,6 +8,9 @@ import { isPeriodOption } from "@/lib/dashboard/period";
  * sesión + parámetro y delega todo a lib/analytics/service.ts, que es la
  * misma función que usa el Server Component del dashboard para su render
  * inicial — un solo lugar calcula el rango de fechas para cada período.
+ *
+ * Devuelve `{ analytics, score }` desde la Fase 5 — el Developer Activity
+ * Score viaja junto al resto de las métricas del período seleccionado.
  */
 export async function GET(request: Request) {
   const session = await auth();
@@ -23,6 +26,6 @@ export async function GET(request: Request) {
     );
   }
 
-  const result = await getAnalyticsForUser(session.user.id, period);
+  const result = await getAnalyticsWithScore(session.user.id, period);
   return NextResponse.json(result);
 }

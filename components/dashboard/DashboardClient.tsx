@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { PeriodOption } from "@/lib/dashboard/period";
 import type { DashboardData } from "@/lib/dashboard/types";
-import type { AnalyticsResult } from "@/lib/analytics/engine";
+import type { AnalyticsWithScore } from "@/lib/analytics/service";
 import { PeriodSelector } from "@/components/dashboard/PeriodSelector";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
@@ -13,6 +13,8 @@ import { StreakCard } from "@/components/dashboard/StreakCard";
 import { InsightsGrid } from "@/components/dashboard/InsightsGrid";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Skeleton } from "@/components/dashboard/Skeleton";
+import { ScoreCard } from "@/components/dashboard/ScoreCard";
+import { BadgesGrid } from "@/components/dashboard/BadgesGrid";
 
 interface DashboardClientProps {
   initialPeriod: PeriodOption;
@@ -20,15 +22,16 @@ interface DashboardClientProps {
 }
 
 /**
- * Cambiar de período solo vuelve a pedir analytics — los insights son del
- * período canónico "rolling12" y no dependen del selector de gráficos
- * (ver lib/insights/service.ts). Esto evita un fetch redundante y evita
- * que las tarjetas de insights "parpadeen" cada vez que alguien cambia
- * entre 30 días / año calendario / 12 meses.
+ * Cambiar de período solo vuelve a pedir analytics (+ score, que viaja
+ * junto desde la Fase 5) — los insights y los badges no dependen del
+ * selector de gráficos (insights son del período canónico "rolling12",
+ * badges son logros permanentes). Esto evita fetches redundantes y evita
+ * que esas secciones "parpadeen" al cambiar de período.
  */
 export function DashboardClient({ initialPeriod, initialData }: DashboardClientProps) {
   const [period, setPeriod] = useState<PeriodOption>(initialPeriod);
-  const [analytics, setAnalytics] = useState<AnalyticsResult>(initialData.analytics);
+  const [analytics, setAnalytics] = useState(initialData.analytics);
+  const [score, setScore] = useState(initialData.score);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,8 +44,9 @@ export function DashboardClient({ initialPeriod, initialData }: DashboardClientP
     try {
       const res = await fetch(`/api/analytics?period=${next}`);
       if (!res.ok) throw new Error("No se pudo cargar el período seleccionado.");
-      const data: AnalyticsResult = await res.json();
-      setAnalytics(data);
+      const data: AnalyticsWithScore = await res.json();
+      setAnalytics(data.analytics);
+      setScore(data.score);
     } catch {
       setError("No se pudo cargar el período seleccionado. Intenta de nuevo.");
     } finally {
@@ -73,10 +77,13 @@ export function DashboardClient({ initialPeriod, initialData }: DashboardClientP
             <StatCard value={analytics.commitStats.activeDays} label="Días activos" />
           </section>
 
-          <StreakCard
-            currentStreak={analytics.streaks.currentStreak}
-            longestStreak={analytics.streaks.longestStreak}
-          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <StreakCard
+              currentStreak={analytics.streaks.currentStreak}
+              longestStreak={analytics.streaks.longestStreak}
+            />
+            <ScoreCard score={score} />
+          </div>
 
           <section className="rounded-xl border border-wrapped-border bg-wrapped-card p-6">
             <h2 className="mb-4 font-display text-lg font-semibold">Actividad</h2>
@@ -108,6 +115,11 @@ export function DashboardClient({ initialPeriod, initialData }: DashboardClientP
           </div>
         </>
       )}
+
+      <section>
+        <h2 className="mb-4 font-display text-lg font-semibold">Badges</h2>
+        <BadgesGrid />
+      </section>
 
       <section>
         <h2 className="mb-4 font-display text-lg font-semibold">Insights de tu año</h2>
