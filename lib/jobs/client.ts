@@ -21,6 +21,34 @@ type Events = {
   "privacy/purge-private-repos.requested": {
     data: { userId: string };
   };
+  "webhook/push.received": {
+    data: {
+      userId: string;
+      repositoryGithubId: string;
+      commits: {
+        sha: string;
+        message: string;
+        authorName: string;
+        authorEmail: string | null;
+        timestamp: string;
+      }[];
+    };
+  };
+  "webhook/repository-deleted.received": {
+    data: { repositoryGithubId: string };
+  };
+  // ⚠️ Fase 8: eventos propios, separados de "wrapped/generate.requested"
+  // y "insights/generate.requested" -- mismo motivo que separar
+  // insights de sync (sección de lib/jobs/insights.ts): si el envío del
+  // email falla o el proveedor está caído, eso nunca debe hacer fallar
+  // ni reintentar la generación del Wrapped o el otorgamiento del badge,
+  // que ya se completaron con éxito antes de que este evento se dispare.
+  "notifications/wrapped-ready.requested": {
+    data: { userId: string; year: number };
+  };
+  "notifications/streak-milestone.requested": {
+    data: { userId: string; badgeType: string; streakLength: number };
+  };
 };
 
 export const inngest = new Inngest({

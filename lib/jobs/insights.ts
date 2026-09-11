@@ -3,6 +3,17 @@ import { getAnalyticsForPeriod } from "@/lib/analytics/service";
 import { generateAndPersistInsights } from "@/lib/insights/persist";
 import { awardEligibleBadges } from "@/lib/gamification/persist";
 
+// ⚠️ Fase 8: de los badges que puede otorgar `awardEligibleBadges`, solo
+// estos tres disparan un email de "milestone de racha" -- el resto
+// (polyglot_5, night_shift, century_club, marathon) no son rachas y
+// quedan fuera del alcance pedido para esta fase (ver comentario en
+// `lib/notifications/service.ts::notifyStreakMilestone`).
+const STREAK_BADGE_LENGTHS: Record<string, number> = {
+  streak_7: 7,
+  streak_30: 30,
+  streak_100: 100
+};
+
 /**
  * Corre después de sync-user-data (encolado como evento separado desde
  * lib/jobs/sync.ts). Deliberadamente independiente: si la generación de
@@ -31,6 +42,16 @@ export const generateUserInsights = inngest.createFunction(
 
     const newBadges = await step.run("award-badges", () => awardEligibleBadges(userId, analytics));
 
-    return { insightsGenerated: generated.length, newBadges };
+    for (const badge of newBadges) {
+      const streakLength = STREAK_BADGE_LENGTHS[badge.type];
+      if (streakLength === undefined) continue; // no es un badge de racha -- no notifica
+
+      await step.sendEvent(`notify-streak-milestone-${userId}-${badge.type}`, {
+        name: "notifications/streak-milestone.requested",
+        data: { userId, badgeType: badge.type, streakLength }
+      });
+    }
+
+    return { insightsGenerated: generated.length, newBadges: newBadges.map((b) => b.type) };
   }
 );

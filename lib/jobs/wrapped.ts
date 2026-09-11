@@ -48,6 +48,14 @@ export const generateWrappedReport = inngest.createFunction(
       generateAndPersistInsights({ userId, period, analytics })
     );
 
+    // ⚠️ Fase 8: se decide ANTES del upsert, con el resultado de
+    // "check-existing" de arriba -- después del upsert `existing` ya no
+    // serviría para distinguir creación de actualización. Notificar es
+    // exclusivo del momento en que un año CERRADO se genera por primera
+    // vez (nunca en una regeneración del año en curso, que pasa cada vez
+    // que el usuario abre su propio Wrapped todavía abierto).
+    const isFirstTimeClosedYear = isClosed && !existing;
+
     await step.run("upsert-wrapped-report", () =>
       prisma.wrappedReport.upsert({
         where: {
@@ -79,6 +87,13 @@ export const generateWrappedReport = inngest.createFunction(
         }
       })
     );
+
+    if (isFirstTimeClosedYear) {
+      await step.sendEvent("notify-wrapped-ready", {
+        name: "notifications/wrapped-ready.requested",
+        data: { userId, year }
+      });
+    }
 
     return { skipped: false };
   }

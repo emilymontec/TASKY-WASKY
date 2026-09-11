@@ -93,6 +93,8 @@ model User {
   badges         Badge[]
   comparisonsInitiated ComparisonLink[] @relation("ComparisonRequester")
   comparisonsReceived  ComparisonLink[] @relation("ComparisonRecipient")
+  notificationPreference NotificationPreference?
+  notificationLogs       NotificationLog[]
 }
 
 // GitHub App/OAuth token storage.
@@ -124,6 +126,14 @@ model Repository {
   url         String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // ⚠️ Fase 7: si el registro del webhook (push/repository) tuvo éxito
+  // para este repo. Best-effort — requiere que el token tenga scope
+  // admin:repo_hook (público) o repo (privado, ya cubierto en Fase 6);
+  // nuestro scope base no lo incluye, así que esto queda en `false` para
+  // la mayoría de los repos hasta que se resuelva el scope adicional o
+  // se migre a GitHub App (ver lib/github/webhooks.ts). No bloquea nada
+  // — el cron de reconciliación cubre estos repos igual.
+  webhookRegistered Boolean @default(false)
 
   userId  String
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -347,4 +357,55 @@ enum ComparisonStatus {
   PENDING
   ACCEPTED
   DECLINED
+}
+
+// ─────────────────────────────────────────────────────────
+// Notificaciones (Fase 8 del roadmap de producto final)
+// ─────────────────────────────────────────────────────────
+
+// Preferencias granulares por usuario y por tipo de notificación
+// (sección "Siguiente paso" del README de la Fase 7). Deliberadamente
+// una fila por usuario con una columna booleana por tipo -- igual que
+// el resto del dominio (Badge.type, Insight.type), NO se modela como un
+// enum ni como un blob JSON de preferencias: cada tipo nuevo de
+// notificación que el producto agregue requiere una migración explícita
+// (columna nueva con su propio default), lo cual es intencional --
+// nunca queremos que un tipo de notificación nuevo "aparezca" activado
+// o desactivado por accidente vía un default de JSON.
+//
+// A diferencia de `privateReposEnabled` (default false -- expandir qué
+// se lee es una decisión consciente del usuario), estos defaults son
+// `true`: son notificaciones sobre el propio contenido ya generado del
+// usuario (su Wrapped, sus rachas), no una expansión del alcance de
+// datos leídos. El usuario puede desactivarlas en cualquier momento
+// desde /settings.
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  wrappedReadyEmail    Boolean  @default(true)
+  streakMilestoneEmail Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Auditoría + deduplicación de envíos (sección Consideraciones: un cron
+// diario que revisa "¿ya cerró el año?" puede correr de nuevo sin que
+// eso implique reenviar el mismo email; un reintento de Inngest tras un
+// fallo transitorio tampoco debe duplicar el envío). `key` identifica de
+// forma única QUÉ disparó la notificación dentro de su `type` (el año
+// para wrapped_ready, el tipo de badge para streak_milestone) -- antes
+// de enviar, `lib/notifications/service.ts` siempre revisa que no exista
+// ya un log con este (userId, type, key).
+model NotificationLog {
+  id     String   @id @default(cuid())
+  userId String
+  type   String
+  key    String
+  sentAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, key])
+  @@index([userId, type])
 }

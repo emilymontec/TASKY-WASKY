@@ -5,6 +5,7 @@ import { getRepositories } from "@/lib/github/repositories";
 import { getCommitsForRepository } from "@/lib/github/commits";
 import { getLanguagesForRepository } from "@/lib/github/languages";
 import { createGitHubGraphQLClient, getContributionCalendar } from "@/lib/github/graphql";
+import { registerRepoWebhookBestEffort } from "@/lib/github/webhooks";
 import { resolvePeriod } from "@/lib/dashboard/period";
 
 /**
@@ -69,6 +70,38 @@ export const syncUserData = inngest.createFunction(
           create: { ...repo, userId },
           update: { ...repo }
         });
+      }
+    });
+
+    // Fase 7: registro best-effort de webhooks — solo para repos que
+    // todavía no lo tienen y solo si WEBHOOK_URL/GITHUB_WEBHOOK_SECRET
+    // están configurados. Un fallo acá (falta de scope, repo ya con
+    // webhook, lo que sea) nunca debe tirar abajo la sync — por eso es
+    // su propio step, independiente del resto.
+    await step.run("register-webhooks-best-effort", async () => {
+      const webhookBaseUrl = process.env.WEBHOOK_BASE_URL;
+      const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+      if (!webhookBaseUrl || !webhookSecret) return;
+
+      const unregistered = await prisma.repository.findMany({
+        where: { userId, webhookRegistered: false },
+        select: { id: true, fullName: true }
+      });
+
+      for (const repo of unregistered) {
+        const [owner, repoName] = repo.fullName.split("/");
+        const success = await registerRepoWebhookBestEffort(client, {
+          owner,
+          repo: repoName,
+          webhookUrl: `${webhookBaseUrl}/api/webhooks/github`,
+          secret: webhookSecret
+        });
+        if (success) {
+          await prisma.repository.update({
+            where: { id: repo.id },
+            data: { webhookRegistered: true }
+          });
+        }
       }
     });
 

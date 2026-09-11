@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth, signIn, GITHUB_SCOPES_WITH_PRIVATE_REPOS } from "@/lib/auth";
 import { getPrivateReposStatus } from "@/lib/settings/service";
+import { getNotificationPreferences } from "@/lib/notifications/preferences";
 import { PrivateReposToggle } from "@/components/settings/PrivateReposToggle";
+import { NotificationPreferencesToggles } from "@/components/settings/NotificationPreferencesToggles";
 
 /**
  * ⚠️ Fase 6 — el punto de mayor sensibilidad de privacidad del producto
@@ -20,10 +22,24 @@ export default async function SettingsPage() {
   }
 
   const status = await getPrivateReposStatus(session.user.id);
+  const notificationPreferences = await getNotificationPreferences(session.user.id);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="mb-8 font-display text-2xl font-semibold text-white">Configuración</h1>
+
+      <section className="mb-6 rounded-xl border border-wrapped-border bg-wrapped-card p-6">
+        <h2 className="font-display text-lg font-semibold text-white">Notificaciones</h2>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+          Elegí qué avisos por email querés recibir. Podés desactivarlos en cualquier momento.
+        </p>
+        <div className="mt-6">
+          <NotificationPreferencesToggles
+            initialWrappedReadyEmail={notificationPreferences.wrappedReadyEmail}
+            initialStreakMilestoneEmail={notificationPreferences.streakMilestoneEmail}
+          />
+        </div>
+      </section>
 
       <section className="rounded-xl border border-wrapped-border bg-wrapped-card p-6">
         <h2 className="font-display text-lg font-semibold text-white">
